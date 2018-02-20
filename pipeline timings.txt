@@ -1,0 +1,487 @@
+﻿Manju D :-  340891 (Recruitment)
+
+
+http://127.0.0.1:52461/proxy.pac
+
+ssh -i Mayur.pem ubuntu@ec2-35-168-86-90.compute-1.amazonaws.com
+ssh -i keys/EMR.pem ec2-user@ec2-54-242-85-190.compute-1.amazonaws.com
+https://tabdev.wmg.com/#/views/PipelineStatus/ETLLoad
+
+--Need to check Daily
+-----------------------------
+DimGCDMRedshiftCopy
+
+
+
+-----------Production EMR --------------- 
+
+ssh -i ~/EMR.pem hadoop@ec2-54-88-28-34.compute-1.amazonaws.com
+
+----------- Jump Box ---------------------
+
+ssh –i ~/ShashankS.pem ShashankSrivastava@10.194.1.11
+
+------------------------
+
+Console - https://console.aws.amazon.com/datapipeline/home?region=us-east-1
+
+check complete logs list through cli
+--aws s3 ls s3://wmg-data-factory-prod/logs/datapipeline/df-0629217XRW0BV2YQE9N/activity.8/@activity.8_2017-02-25T11:00:00/@activity.8_2017-02-25T11:00:00_Attempt=1/
+
+ADA_Tableau
+--in 2nd activity stderr log
+s3://wmg-data-factory-prod /home/hadoop/feeds/ADA_Tableau 20170228 
+s3://wmg-data-factory-prod/data/ADA_Tableau/processed/wea_level_to_uaa_for_json 
+/tmp/ADA_Tableau https://identity.useast.production.wmg.com/oauth/token ada-portal appclientsecret 
+https://ada-portal-service.useast.production.wmg.com/api/labels/replace 100 ada.json
+
+7stars  - aws s3 ls s3://wmg-data-factory-prod/data/7Stars/processed/Amazon_primes/year=2017/month=06/day=20170622/
+
+Itunes(1 days)					00:00 Runs every 2 hours
+select day,count(1) as count from itunes group by day order by day desc limit 5;
+aws s3 ls s3://wmg-data-factory-prod/data/itunes/raw/year=2017/month=01/day=20170122/
+check for 'Already Processed' else re-run to check the file availability
+stout - normal flow
+for 17th it will process 16th data..it will run for every 2 hrs..so for whole day it will process 16th data..so check for 15th data on 16th
+--itunes, preorder, apple music etc are direct download from api (Some url)
+--https://itunesconnect.apple.com   USERNAME=Deep.Thought@wmg.com&PASSWORD=Music2011 
+
+
+itunesPreOrder(1 days)			00:00 Daily
+select day,count(1) as count from itunes_preorders group by day order by day desc limit 5;
+re-run to check the file availability if file not avaiable
+aws s3 ls s3://wmg-data-factory-prod/data/itunesPreOrder/raw/dataformat=5/year=2017/month=01/
+17th check for 15th data
+https://itunesconnect.apple.com
+
+
+AppleMarketShare				00:00	Weekly	Monday
+select day,count(1) as count from itunes_market_share group by day order by day desc limit 5;
+
+~~Medianet						00:00	Monthly	23rd
+sftp wmg_radio@sftp-01.musicnet.com/89Kag-a4! 
+cd Reports/  ls -ltr for date and file bye to come out of sftp
+--For Canada every month we are mailing the Source team
+select day,count(1) as count from medianet group by day order by day desc limit 5;
+--DEVOPS-6649
+--if it comes in error list check precondition - if it is for CA mark it as fininshed
+
+Amazon_prime(1 day)					00:00 Runs every 2 hours 
+5 territories
+select day,count(1) as count from amazon_prime group by day order by day desc limit 10;
+select day,country_code,count(1) as count from amazon_prime group by day,country_code order by day desc limit 10;
+select day,count(distinct(country_code)) as count from amazon_prime group by day order by day desc limit 15;
+aws s3 ls s3://wmg-data-factory-prod-amazon/PrimeConsumer/raw/daily_warner_prime_customer_usage_2017
+select day,country_code,count(1) as count from amazon_prime where day='2017-08-23' group by day,country_code order by day desc limit 10;
+
+Amazon(1 day)					00:00 Runs every 2 hours 
+9 territories
+select day,count(1) as count from amazon group by day order by day desc limit 10;
+select day,country_code,count(1) as count from amazon group by day,country_code order by day desc limit 10;
+select day,country_code,count(1) as count from amazon where day='2017-10-11' group by day,country_code order by day desc limit 10;
+select day,count(distinct(country_code)) as count from amazon group by day order by day desc limit 10;
+aws s3 ls s3://wmg-data-factory-prod-amazon/SalesConsumer/raw/daily_warner_csv_sales_2017
+--if no data check log..sometimes staging table creation may be a reason..run only that activity..check the count in staging and in main
+
+Pandora (2 days) 			00:00
+on 17th check for 15th 
+aws s3 ls s3://pandora-usage-reporting-wmg/data/2017/10/05/
+select day,count(1) as count from pandora group by day order by day desc limit 10;
+select day,count(distinct country_code) as count from pandora group by day order by day desc limit 10;
+select day,count(1) as count from pandora group by day order by day desc limit 5; 
+select day,country_code,count(1) as count from pandora group by day,country_code order by day desc limit 10;
+
+~~Spotify	(2 days)					00:00	Runs every 2 hours
+--Spotify and SpotifyEpitaph will have same table
+curl -d grant_type=client_credentials -dclient_id=warner -dclient_secret=1F9z3VXzh3Ic38eh https://ws.spotify.com/oauth/token
+
+curl -I 'https://ws.spotify.com/analytics/api/warnermusicgroup/tracks/2018/01/12/?oauth_token=NAopChEKBndhcm5lchIAGgAlKRteWhIUCrHd5bzjRVwBI0OZqMmhdWporSk'
+curl -I 'https://ws.spotify.com/analytics/api/warnermusicgroup/users/2018/01/12/?oauth_token=NAopChEKBndhcm5lchIAGgAlKRteWhIUCrHd5bzjRVwBI0OZqMmhdWporSk'
+curl -I 'https://ws.spotify.com/analytics/api/warnermusicgroup/streams/2018/01/13/US?oauth_token=NAopChEKBndhcm5lchIAGgAlKRteWhIUCrHd5bzjRVwBI0OZqMmhdWporSk'
+
+
+curl -I 'https://ws.spotify.com/analytics/api/warnermusicgroup/tracks/2017/07/29?oauth_token=NAopChEKBndhcm5lchIAGgAlEhyCWRIUPOC_cz66G0liZSkA00lw9JlrbE0'
+
+curl https://ws.spotify.com/analytics/api/warnermusicgroup/streams/2017/04/07/US?oauth_token=NAopChEKBndhcm5lchIAGgAlTgztWBIUJcttR9RMbEODapu4wtsJpELcAXQ > streams_20170208_AT.gz
+select day,count(1) as count from spotify group by day order by day desc limit 10;
+select count(*) from spotify where day = '2017-02-07';
+~~SpotifyEpitaph(2 Days)					00:00 Runs every 2 hours 
+select day,count(1) as count from spotify where source='epitaph' group by day order by day desc limit 10;
+select day,count(source) as count from spotify group by day,source order by day desc limit 10;
+select day,source,count(distinct country_code) as count from spotify group by day,source order by day desc limit 10; 
+select day,source,count(1) as count from spotify group by day,source order by day desc limit 6;
+
+select country_code,count(1) from spotify where day='2017-08-30' and source IS NULL group by 1 order by 1;
+--DEVOPS-6526 if duplicate data found
+-----select count(1) from spotify where day='2017-01-21' and source is null;
+-----delete from spotify where day='2017-01-21' and source is null;
+--DEVOPS-6955
+Once spotify pipeline is completed we have to rerun below pipelines.
+Spotify_Aggregate
+Topsify
+TopsifySpotifyStreams
+BMG
+Dataextract mapping
+7-stars
+FileFormatConversion
+
+---------------SFTP Details ---------------------
+
+deezer - sftp Deezer@sftp.wmg.com/cDeezer
+iheart_radio - sftp dataings_iheartradio@etrans.wmg.com  83/m="7J8-8K
+omniture - sftp data_feed_wmg@ftp.omniture.com/kQlMWQtW
+youTubeInsights - sftp dataings_youtube_w@etrans.wmg.com - <Nm5"A5@p_yD
+exactTarget - sftp 7000789@ftp.s6.exacttarget.com/q.8H.3Bt5
+soundExchange - sftp WMG-sx@sftp.soundexchange.com/YNFweJq+4dO8alV4
+Nielsen - sftp ss_ftp_user@10.139.16.40/ Music@2011 (cd /emc03/docadmin/SoundScan/Archive/)
+Medianet - sftp wmg_radio@sftp-01.musicnet.com/89Kag-a4! 
+pandora_Top5000 - sftp dataings_pandora_top5k@10.139.180.43 : 3Zf#x83yYD5C
+DataExtractBMG - sftp bmg_ada@transfergate.de/VloK0Q4FAtwf
+7stars - sftp -P 2020 warner@7-amp.com Tomolly2212 
+s3FtpUploader - sftp schevuturu@etrans.wmg.com / asdf@098
+Youtube_Video_Report - sftp dataings_youtube_vr@etrans.wmg.com *M%22TPv3x5cYX
+googlePlaylist - sftp googleplay@etrans.wmg.com/Lpgl@2015
+googlePlay - sftp googleplay@eTrans.wmg.com/Lpgl@2015
+deezer - sftp Deezer@eTrans.wmg.com/cDeezer
+
+
+--------------------------------------------------------------------
+
+
+
+------------s3FtpUploader-------------------
+sftp schevuturu@etrans.wmg.com / asdf@098
+in this go to wws
+and then streams, users and tracks
+
+spotify/wws/streams/year=2018/month=01/day=20180110
+--------------------------------------------
+
+Dataextract mapping (2 days)
+reconcile - aws s3 ls s3://wmg-data-factory-prod/data/dataextract-mapping/processed/Spotify/year=2018/month=01/day=20180110/
+
+7stars  - aws s3 ls s3://wmg-data-factory-prod/data/7Stars/processed/Spotify/year=2018/month=01/day=20180110/
+
+s
+-- For amazon prime 3rd data we need to run 5th pipeline
+--delete marker and rerun for that activity
+
+after dataextract mapping - check 7stars (2 days) 
+recocile - aws s3 ls s3://wmg-data-factory-prod/data/7Stars/processed/Spotify/year=2017/month=08/day=20170826/
+
+----DataExtractBMG---
+
+aws s3 ls s3://wmg-data-factory-prod/data/DataExtractBMG/processed/Spotify/year=2018/month=01/day=20180112/
+
+aws s3 ls s3://wmg-data-factory-prod/data/DataExtractBMG/processed/Pandora/year=2017/month=10/day=20171009/
+
+aws s3 ls s3://wmg-data-factory-prod/data/DataExtractBMG/processed/AppleMusic/year=2017/month=11/day=20171101/
+
+aws s3 ls s3://wmg-data-factory-prod/data/DataExtractBMG/processed/Amazon_Prime/year=2017/month=11/day=20171112/
+
+
+
+---FileFormatConversion----
+
+aws s3 ls s3://wmg-data-factory-prod/data/FileFormatConversion/hive_meta_update/processed/run_date=20180112/
+
+aws s3 ls s3://wmg-data-factory-prod-qubole/data/AppleMusic/processed_orc/year=2017/month=09/day=20171005/
+
+---s3FtpUploader--
+sftp schevuturu@etrans.wmg.com / asdf@098
+
+
+Soundcloud_ART	(current day)			00:00
+select created_date,count(1) as count from raw_soundcloud_data group by created_date order by created_date desc limit 5;
+--take so much time, will take time to populate the data for today
+select created_date,count(1) as count from raw_soundcloud_calculated_data group by created_date order by created_date desc limit 5;
+--contains latest data
+
+OCC									00:00	Weekly 	Saturday
+select count(1),day from occ_album_sales group by day  order by day desc limit 5;
+select count(1),day from occ_audio_streams group by day  order by day desc limit 5;
+select count(1),day from occ_single_sales group by day  order by day desc limit 5;
+select count(1),day from occ_video_streams group by day  order by day desc limit 5;
+--loade till last thursday
+
+~~~Youtube_Video_Report				00:00 	Runs every 4 hours
+sftp dataings_youtube_vr@etrans.wmg.com 
+password *M%22TPv3x5cYX
+select day,count(1) as count from youtube_video_report  group by day order by day desc limit 5;
+select count(1),time_uploaded as count from youtube_video_report  group by time_uploaded order by time_uploaded desc limit 5;
+No data in table for some days because it will process data once data is available. so no need to raise a ticket
+
+AppleMusic(1 days)					00:00	Runs every 2 hours
+select published_date, count(1) as cnt from itunes_streaming group by published_date order by published_date desc limit 5;
+select published_date,vendor_id,count(1) as cnt from itunes_streaming group by published_date,vendor_id order by published_date desc limit 6;
+select published_date,count(distinct(vendor_id)) as cnt from itunes_streaming group by published_date order by published_date desc limit 5;
+select published_date,count(distinct(vendor_id)) as cnt from applemusic_streams group by published_date order by published_date desc limit 5;
+
+--if no data just re-run the process, again no data.. check jar files..
+
+select published_date,vendor_id,count(1) as cnt from itunes_streaming where published_date = '2017-01-30' group by published_date,vendor_id order by published_date desc limit 6;
+
+Deep.Thought@wmg.com/Music2011
+
+SusanA@ip-10-0-5-227:~/Reporter$ java -jar Reporter.jar p=Reporter.properties Sales.getReport 86757954, amStreams, Detailed, Daily, 20161126
+
+select published_date,vendor_id,count(1) as cnt from applemusic_streams group by published_date,vendor_id order by published_date desc limit 6;
+select published_date,vendor_id,count(1) as cnt from applemusic_streams where published_date = '2016-12-19' group by published_date,vendor_id order by published_date desc limit 6;
+select published_date,count(distinct(vendor_id)) as cnt from applemusic_streams group by published_date order by published_date desc limit 5;
+--TRUNCATE TABLE table_name;
+--during 20th activity it will look for .manifest file..it should be file for not processed vendors in case of rerunning 
+
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86758078, amStreams, Detailed, Daily, 20170218
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86757895, amStreams, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86757954, amStreams, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86758076, amStreams, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86758080, amStreams, Detailed, Daily, 20170116
+
+
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86758078, amControl, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86757895, amControl, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86757954, amControl, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86758076, amControl, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86758080, amControl, Detailed, Daily, 20170116
+
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86758078, amEvent, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86757895, amEvent, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86757954, amEvent, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86758076, amEvent, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86758080, amEvent, Detailed, Daily, 20170116
+
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86758078, amContent, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86757895, amContent, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86757954, amContent, Detailed, Daily, 20170116
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86758076, amContent, Detailed, Daily, 20170214
+java -jar Reporter.jar p=Reporter.properties Sales.getReport 86758080, amContent, Detailed, Daily, 20170116
+86758078
+86757895
+86757954
+86758076
+86758080
+
+TopsifyAppleMusicStreams(1 day) 
+
+check pre_check for last run - on 20th check for 19 22:00 - if 'vendors not available for process' found then check in AppleMusic whether vendor files are there or not.
+if found re-run the process.
+if not found re-reun AppleMusic
+reconcile - aws s3 ls s3://wmg-data-factory-prod/data/TopsifyAppleMusicStreams/transaction/streams/year=2017/month=04/day=20170408/
+
+rerun data xtract mapping, 7stars
+
+~~~~VacuumSortTables				01:00
+how to check output
+
+~~~eTrans (1 day)							01:50	Runs every 2 hours
+how to check output
+select trunc(create_date),count(1) from assets_products_core_dim group by trunc(create_date) order by trunc(create_date) desc limit 5;
+select trunc(create_date),count(1) from assets_products_terr_dim group by trunc(create_date) order by trunc(create_date) desc limit 5; 
+--weekly once
+--count doesnot matter
+
+radioMonitor(2 days)				02:30
+select day,count(1) as count from Radiomonitor group by day order by day desc limit 5;
+
+DataExtractBMG   --weekly
+INPUT: Processed data from various pipelines
+Output path (where data gets copied to) sftp bmg_ada@transfergate.de/VloK0Q4FAtwf
+aws s3 ls s3://wmg-data-factory-prod/data/DataExtractBMG/processed/
+--run one after another...after taking backup of processed for whole week from Sun - Sat 
+
+GCDM_1	(on 3rd data for 1st?)						05:30
+select top 10 distinct last_modified_on, count(*) from rpt_artist group by last_modified_on order by last_modified_on desc;
+--once data was not loaded into one file .. found error in stdout file...beacuase of _lastrunfile is missing..
+--in that case copy one _lastrun file and update the date with new_last_run and upload that file.
+
+GCDM_2							05:30
+--truncate and load data so try to fix issue before next day's run..else ask in group 
+--
+
+GCDM_3							05:30
+GCDM_4							05:30
+GCDM_5							05:30
+
+~~~cdc 							06:00
+how to check output
+
+
+~~~adaUserLabel					06:00
+how to check output
+
+Apple_Charts(2 days)			06:00
+select day,count(1) as count from apple_chart_data group by day order by day desc limit 5;
+
+googlePlay	(2 Days)				08:00
+sftp googleplay@sftp.wmg.com/Lpgl@2015
+select day,count(1) as count from google_play group by day order by day desc limit 10;
+select day,interaction_type,count(1) as count from google_play group by day,interaction_type order by day desc limit 7;
+
+select day,count(distinct country_code) as count from google_play group by day order by day desc limit 5;
+
+--select first_date, count(1) from agg_all_partner_rtd group by first_date order by first_date desc limit 5;
+
+SpotifyPlaylist	(current date)	08:00	Daily
+select day,count(1) as count from spotify_playlist group by day order by day desc limit 6;
+
+pita							09:30
+select order_date,count(*) from pita_sales_transactions group by order_date order by order_date desc limit 5;
+select order_date,count(*) from pita_chrg_transactions group by order_date order by order_date desc limit 5;
+select order_date,count(*) from pita_disc_transactions group by order_date order by order_date desc limit 5;
+select file_load_date,count(*) from pita_sales_attributes group by file_load_date order by file_load_date desc limit 5;
+
+select count(*) from pita_sales_transactions ;
+select count(*) from pita_chrg_transactions;
+select count(*) from pita_disc_transactions;
+select count(*) from pita_sales_attributes;
+
+deezer(1 day)					10:00
+sftp Deezer@sftp.wmg.com/cDeezer
+select day,count(1) as count from deezer group by day order by day desc limit 5;
+
+iheart_radio					10:00 ( Weekly - Thursday)
+sftp dataings@sftp.wmg.com/HumanError?
+/dsp/iheartradio/Weekly_Consumer/
+select performance_date,count(1) from iheart_radio group by performance_date order by performance_date desc limit 8;
+
+--copy file into local aws s3 cp s3://wmg-data-factory-prod/data/iheart_radio/raw/year=2016/month=10/day=20161006/weekly_anonymized_user_listener_custom_20161006_20161012.csv.000.gz ./
+--zgrep -i "2016/10/6" weekly_anonymized_user_listener_custom_20161006_20161012.csv.000.gz| wc -l
+
+shazamTop200					10:00	Weekly	Monday
+select day,count(1) as count from Shazam_top200 group by day order by day desc limit 10;
+
+shazamTop5000					10:00	Weekly	Monday
+select day,count(1) as count from Shazam_top5000 group by day order by day desc limit 10;
+
+itunesEPF						10:00	Weekly	Sunday
+select trunc(export_date),count(1) as count from epf_video group by trunc(export_date) order by trunc(export_date) desc limit 10;
+oPEN XEN desktop (http://10.138.70.31/Citrix/DesktopWeb/auth/loggedout.aspx?CTX_MessageType=INFORMATION&CTX_MessageKey=SessionExpired)
+and open the link given below to check the source data - date
+http://feeds.itunes.apple.com/feeds/epf/v3/full/current/
+--loads till last wednesday
+
+omniture	(2 Days)			10:00
+sftp data_feed_wmg@ftp.omniture.com/kQlMWQtW
+select day,count(1) as count from omniture group by day order by day desc limit 10;
+
+Youtube_UCL_CMS					10:00	Monthly	9th
+Youtube_CMS						10:00	Monthly	9th (we can wait till 15th for the file to arrive, after which we can sent mail)
+sftp://dataings_youtube_m:crln8hg(:krn@etrans.wmg.com/youtube/youtube_wmg_m_20161201_20161231_rawdata_v1-0.csv.gz"
+
+username - dataings_youtube_m
+password - crLn8hG(:kRN
+path - sftp dataings_youtube_m@etrans.wmg.com/youtube/
+--reconcile - aws s3 ls s3://wmg-data-factory-prod/data/Youtube_CMS/processed/year=2016/month=12/day=20161231/
+sftp dataings@sftp.wmg.com/HumanError?
+/dsp/youtube/
+
+select day,count(1) from youtube_cms group by day order by day desc limit 5;
+
+youTubeInsights					11:00	Weekly	Tuesday
+
+wws (daily)							11:00
+--files wont be there for sunday
+Source - aws s3 ls s3://wmg-data-factory-prod-wws/rep_affiliates/
+destination - aws s3 ls s3://wmg-data-factory-prod/data/wws/raw/rep_affiliates/year=2017/month=02/day=20170214/
+
+
+Youtube_ART(current day)					11:00
+select created_date,count(1) as count from raw_youtube_data group by created_date order by created_date desc limit 5;
+select created_date,count(1) as count from raw_youtube_calculated_data group by created_date order by created_date desc limit 5;
+
+
+~~exactTarget						11:00
+how to check output
+
+spotifyPartnerEmails (2 days)			11:00
+select day,count(1) as count from spotify_partner_emails group by day order by day desc limit 5;
+--manually kill the process else it will run continuosly
+--if u run the curl commnd and see that data is not avaialble, u can cancel the download actvty
+to check if data is in API:
+
+Get token : 
+curl -dgrant_type=client_credentials -dclient_id=warner -dclient_secret=1F9z3VXzh3Ic38eh https://ws.spotify.com/oauth/token
+
+curl -I "https://ws.spotify.com/analytics/partneremails/2017/11/22?oauth_token=NAopChEKBndhcm5lchIAGgAlOVkcWhIUgSf51L49AkUwFVmLadhY8MDQ0eU"
+contact source team after 96 hrs.. (4 days)
+--file is there when 
+HTTP/1.1 200 OK
+Content-Length: 111216997
+
+curl -I "https://ws.spotify.com/analytics/partneremails/2017/11/22?oauth_token=NAopChEKBndhcm5lchIAGgAlOVkcWhIUgSf51L49AkUwFVmLadhY8MDQ0eU" 	
+
+
+
+
+curl -I “https://ws.spotify.com/analytics/partneremails/yyyy/mm/dd?oauth_token=xxxxx
+
+~~Spotify_Aggregate		SSSSSSSSSSSSSSSSSSSSSSSSS		11:30
+how to check output
+
+facebook (2 days)						12:00
+
+select day,count(1) from facebook_city_statistics group by day order by day desc limit 10;
+select day,count(1) from facebook_country_statistics group by day order by day desc limit 10;
+select day,count(1) from facebook_gender_age_statistics group by day order by day desc limit 10;
+select day,count(1) from facebook_statistics group by day order by day desc limit 10;
+
+airplay 						12:00
+
+soundExchange					13:00	Monthly	28th
+
+sftp WMG-sx@sftp.soundexchange.com/YNFweJq+4dO8alV4
+select filedate,count(1) as count from sx_processed group by filedate order by filedate desc limit 10;
+
+SpotifyFeaturedPlaylist	(current day)		13:00	Weekly	Thursday --changed weekly to daily
+select day, count(1) from spotify_featured_playlists group by day order by day desc limit 10;
+select day,count(distinct country_code) as count from spotify_featured_playlists group by day order by day desc limit 5;
+
+s3FtpUploader					13:00
+
+spotify_charts( 1 day)				13:00
+select day,count(1) from spotify_chart group by day order by day desc limit 5;
+
+Spotify Tracks (2 days) 14:00
+select count(1),day from spotify_tracks group by day  order by day desc limit 5;
+
+Nielsen							14:00	Weekly 	Monday
+
+sftp ss_ftp_user@10.139.16.40/ Music@2011
+cd /emc03/docadmin/SoundScan/Archive/
+--run at 14:00 monday and load data till last thursday
+select count(1),day from nielsen_cross_reference group by day  order by day desc limit 5;
+select count(1),day from nielsen_genre_indexinfo group by day  order by day desc limit 5;
+select count(1),day from nielsen_dmasales group by day  order by day desc limit 5;
+select count(1),day from nielsen_chartfeed group by day  order by day desc limit 5;
+select count(1),day from nielsen_sales group by day  order by day desc limit 5;
+select count(1),day from nielsen_artist_master group by day  order by day desc limit 5;
+select count(1),day from nielsen_summary group by day  order by day desc limit 5;
+
+awsBilling (2 days)						16:00
+destination - aws s3 ls s3://wmg-data-factory-prod/data/awsBilling/processed/redshift/year=2017/month=02/day=20170215/
+
+WWS_RTD	(daily)					18:00
+--files wont be there for sat and sun
+Source - aws s3 ls s3://wmg-data-factory-prod-wws/Physical_RTD/
+Destination - aws s3 ls s3://wmg-data-factory-prod/data/wws/raw/trans_trx_releasetodate/usage_type=physical/year=2017/month=02/
+
+Youtube_ART_2					20:00
+Youtube_UCL						23:30
+LKP_EXCH_RATES					23:40	Monthly 1st
+
+
+
+011
+
+
+select tbl,query,line_number,colname,starttime,trim(err_reason) as error from stl_load_errors order by starttime desc limit 100;
+
+Copy files from prod to dev 
+aws s3 cp s3://wmg-data-factory-prod-amazon/PrimeConsumer/raw/daily_**.zip s3://wmg-data-factory-dev/data/AmazonPrimeConsumer_Prod/raw --grants full=emailaddress=Dspops@wmg.com
+
+
+Spotify Partner Emails
+
+curl -I "https://ws.spotify.com/analytics/partneremails/2016/07/23oauth_token=NAopChEKBnd?oauth_token=NAopChEKBndhcm5lchIAGgAl7WGWVxIUE7cw
+
+
